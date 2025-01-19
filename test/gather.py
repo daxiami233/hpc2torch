@@ -27,25 +27,57 @@ def test(inputShape, indexShape, axis, test_dtype, device):
     indexTensor = torch.from_numpy(index).to(torch.int64).to(device)
 
     rank = len(inputShape)
-    outTensor = gather(rank, axis, inputTensor, indexTensor)#
+    outTensor = gather(rank, axis, inputTensor, indexTensor)
 
     Q_output = torch.zeros(outTensor.shape, device=device, dtype=test_dtype)
     input_ptr = ctypes.cast(inputTensor.data_ptr(), ctypes.POINTER(ctypes.c_void_p))
     index_ptr = ctypes.cast(indexTensor.data_ptr(), ctypes.POINTER(ctypes.c_void_p))
     output_ptr = ctypes.cast(Q_output.data_ptr(), ctypes.POINTER(ctypes.c_void_p))
 
+    # print(inputTensor, indexTensor, outTensor)
+
     if test_dtype == torch.float32:
         if device == "cuda":
             torch_gather_time = performance.CudaProfile((gather, (rank, axis, inputTensor, indexTensor)))
-            custom_gather_time = 0
+
+            lib.gather_cuda_f32.argtypes = [
+                ctypes.POINTER(ctypes.c_void_p),
+                ctypes.POINTER(ctypes.c_void_p),
+                ctypes.POINTER(ctypes.c_void_p),
+                ctypes.c_int,
+                ctypes.c_int,
+                ctypes.c_int,
+                ctypes.c_int,
+                ctypes.c_int
+            ]
+
+            custom_gather_time = performance.CudaProfile((
+                lib.gather_cuda_f32,
+                (input_ptr, index_ptr, output_ptr, axis, inputShape[0], inputShape[1], indexShape[0], indexShape[1])
+            ))
     if test_dtype == torch.float16:
         if device == "cuda":
             torch_gather_time = performance.CudaProfile((gather, (rank, axis, inputTensor, indexTensor)))
-            custom_gather_time = 0
+            lib.gather_cuda_f16.argtypes = [
+                ctypes.POINTER(ctypes.c_void_p),
+                ctypes.POINTER(ctypes.c_void_p),
+                ctypes.POINTER(ctypes.c_void_p),
+                ctypes.c_int,
+                ctypes.c_int,
+                ctypes.c_int,
+                ctypes.c_int,
+                ctypes.c_int
+            ]
+            custom_gather_time = performance.CudaProfile((
+                lib.gather_cuda_f16,
+                (input_ptr, index_ptr, output_ptr, axis, inputShape[0], inputShape[1], indexShape[0], indexShape[1])
+            ))
     performance.logBenchmark(torch_gather_time, custom_gather_time)
 
     tmpa = outTensor.to('cpu').numpy().flatten()
+    # print(tmpa)
     tmpb = Q_output.to('cpu').numpy().flatten()
+    # print(tmpb)
 
     atol = max(abs(tmpa - tmpb))
 
