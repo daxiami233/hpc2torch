@@ -1,3 +1,0 @@
-/home/xiachangwei/cuda_code/hpc2torch/build/CMakeFiles/my_library.dir
-/home/xiachangwei/cuda_code/hpc2torch/build/CMakeFiles/edit_cache.dir
-/home/xiachangwei/cuda_code/hpc2torch/build/CMakeFiles/rebuild_cache.dir
