@@ -15,7 +15,10 @@ __global__ void gather(T *data, long long *indices, T *output, int axis, int P, 
         int ty = threadIdx.y + blockIdx.y * blockDim.y;
         int tz = (threadIdx.x + blockIdx.x * blockDim.x) * 4;
         if(tx < R && ty < S && tz < Q){
-            int index = indices[tx * S + ty];   
+            int index;
+            if(threadIdx.x == 0){
+                index = indices[tx * S + ty];
+            }   
             index = __shfl_sync(0xFFFFFFFF, index, 0);
 
             if(tz + 4 <= Q){
@@ -44,7 +47,7 @@ __global__ void gather(T *data, long long *indices, T *output, int axis, int P, 
 
 
 
-extern "C" void gather_cuda_f32(void const *data, int *indices, void const *output, int axis, int P, int Q, int R, int S)
+extern "C" void gather_cuda_f32(void const *data, void const *indices, void const *output, int axis, int P, int Q, int R, int S)
 {
     // (P, Q) + (R, S) => (R, S, Q)
     if(axis == 0){
@@ -67,7 +70,7 @@ extern "C" void gather_cuda_f32(void const *data, int *indices, void const *outp
 }
 
 
-extern "C" void gather_cuda_f16(void const *data, int *indices, void const *output, int axis, int P, int Q, int R, int S)
+extern "C" void gather_cuda_f16(void const *data, void const *indices, void const *output, int axis, int P, int Q, int R, int S)
 {
     // (P, Q) + (R, S) => (R, S, Q)
     if(axis == 0){

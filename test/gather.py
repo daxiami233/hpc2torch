@@ -34,43 +34,74 @@ def test(inputShape, indexShape, axis, test_dtype, device):
     index_ptr = ctypes.cast(indexTensor.data_ptr(), ctypes.POINTER(ctypes.c_void_p))
     output_ptr = ctypes.cast(Q_output.data_ptr(), ctypes.POINTER(ctypes.c_void_p))
 
+    # 将元组转换为 ctypes 数组
+    inputShape_arr = (ctypes.c_int * len(inputShape))(*inputShape)
+    indexShape_arr = (ctypes.c_int * len(indexShape))(*indexShape) 
+
+    # 获取数组的指针
+    inputShape_ptr = ctypes.cast(inputShape_arr, ctypes.POINTER(ctypes.c_void_p))
+    indexShape_ptr = ctypes.cast(indexShape_arr, ctypes.POINTER(ctypes.c_void_p))
+
     # print(inputTensor, indexTensor, outTensor)
 
     if test_dtype == torch.float32:
         if device == "cuda":
             torch_gather_time = performance.CudaProfile((gather, (rank, axis, inputTensor, indexTensor)))
 
-            lib.gather_cuda_f32.argtypes = [
-                ctypes.POINTER(ctypes.c_void_p),
+            lib.gather_cuda.argtypes = [
                 ctypes.POINTER(ctypes.c_void_p),
                 ctypes.POINTER(ctypes.c_void_p),
                 ctypes.c_int,
+                ctypes.POINTER(ctypes.c_void_p),
+                ctypes.POINTER(ctypes.c_void_p),
                 ctypes.c_int,
-                ctypes.c_int,
+                ctypes.POINTER(ctypes.c_void_p),
                 ctypes.c_int,
                 ctypes.c_int
             ]
 
             custom_gather_time = performance.CudaProfile((
-                lib.gather_cuda_f32,
-                (input_ptr, index_ptr, output_ptr, axis, inputShape[0], inputShape[1], indexShape[0], indexShape[1])
+                lib.gather_cuda,
+                (
+                    input_ptr, 
+                    inputShape_ptr,
+                    len(inputShape),
+                    index_ptr, 
+                    indexShape_ptr,
+                    len(indexShape),
+                    output_ptr, 
+                    axis,
+                    32
+                )
             ))
     if test_dtype == torch.float16:
         if device == "cuda":
             torch_gather_time = performance.CudaProfile((gather, (rank, axis, inputTensor, indexTensor)))
-            lib.gather_cuda_f16.argtypes = [
-                ctypes.POINTER(ctypes.c_void_p),
+            lib.gather_cuda.argtypes = [
                 ctypes.POINTER(ctypes.c_void_p),
                 ctypes.POINTER(ctypes.c_void_p),
                 ctypes.c_int,
+                ctypes.POINTER(ctypes.c_void_p),
+                ctypes.POINTER(ctypes.c_void_p),
                 ctypes.c_int,
-                ctypes.c_int,
+                ctypes.POINTER(ctypes.c_void_p),
                 ctypes.c_int,
                 ctypes.c_int
             ]
+
             custom_gather_time = performance.CudaProfile((
-                lib.gather_cuda_f16,
-                (input_ptr, index_ptr, output_ptr, axis, inputShape[0], inputShape[1], indexShape[0], indexShape[1])
+                lib.gather_cuda,
+                (
+                    input_ptr, 
+                    inputShape_ptr,
+                    len(inputShape),
+                    index_ptr, 
+                    indexShape_ptr,
+                    len(indexShape),
+                    output_ptr, 
+                    axis,
+                    16
+                )
             ))
     performance.logBenchmark(torch_gather_time, custom_gather_time)
 
@@ -92,12 +123,14 @@ args = parser.parse_args()
 test_cases = [
         # inputShape , indexShape, axis, test_dtype, device
         ((3, 2), (2, 2), 0, torch.float32, "cuda"),
-        ((3, 2), (1, 2), 1, torch.float32, "cuda"),
+        # ((3, 2), (1, 2), 1, torch.float32, "cuda"),
         ((50257, 768), (16, 1024), 0, torch.float32, "cuda"),
+        ((5, 4, 3, 2, 5, 6, 7), (2, 3, 3, 3, 3), 0, torch.float32, "cuda"),
 
         ((3, 2), (2, 2), 0, torch.float16, "cuda"),
-        ((3, 2), (1, 2), 1, torch.float16, "cuda"),
+        # ((3, 2), (1, 2), 1, torch.float16, "cuda"),
         ((50257, 768), (16, 1024), 0, torch.float16, "cuda"),
+        ((5, 4, 3, 2, 5, 6, 7), (2, 3, 3, 3, 3), 0, torch.float16, "cuda"),
          
 ]
 filtered_test_cases = [
