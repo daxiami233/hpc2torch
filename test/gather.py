@@ -9,6 +9,7 @@ import performance
 import sys
 import os
 
+
 lib_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '.././build/lib/libmy_library.so')
 lib = ctypes.CDLL(lib_path)
 
@@ -121,16 +122,24 @@ parser = argparse.ArgumentParser(description="Test softmax on different devices.
 parser.add_argument('--device', choices=['cpu', 'cuda', 'mlu'], required=True, help="Device to run the tests on.")
 args = parser.parse_args()    
 test_cases = [
-        # inputShape , indexShape, axis, test_dtype, device
+        # # inputShape , indexShape, axis, test_dtype, device
         ((3, 2), (2, 2), 0, torch.float32, "cuda"),
-        # ((3, 2), (1, 2), 1, torch.float32, "cuda"),
+        ((3, 2), (1, 2), 1, torch.float32, "cuda"),
         ((50257, 768), (16, 1024), 0, torch.float32, "cuda"),
-        ((5, 4, 3, 2, 5, 6, 7), (2, 3, 3, 3, 3), 0, torch.float32, "cuda"),
+        ((5, 4, 4, 4, 5), (2, 3, 3, 3, 3), 0, torch.float32, "cuda"),
+        ((5, 4, 4, 4, 5), (2, 3, 3, 3, 3), 1, torch.float32, "cuda"),
+        ((5, 4, 4, 4, 5), (2, 3, 3, 3, 3), 2, torch.float32, "cuda"),
+        ((5, 4, 4, 4, 5), (2, 3, 3, 3, 3), 3, torch.float32, "cuda"),
+        ((5, 4, 4, 4, 5), (2, 3, 3, 3, 3), 4, torch.float32, "cuda"),
 
         ((3, 2), (2, 2), 0, torch.float16, "cuda"),
-        # ((3, 2), (1, 2), 1, torch.float16, "cuda"),
+        ((3, 2), (1, 2), 1, torch.float16, "cuda"),
         ((50257, 768), (16, 1024), 0, torch.float16, "cuda"),
-        ((5, 4, 3, 2, 5, 6, 7), (2, 3, 3, 3, 3), 0, torch.float16, "cuda"),
+        ((5, 4, 4, 4, 5), (2, 3, 3, 3, 3), 0, torch.float16, "cuda"),
+        ((5, 4, 4, 4, 5), (2, 3, 3, 3, 3), 1, torch.float16, "cuda"),
+        ((5, 4, 4, 4, 5), (2, 3, 3, 3, 3), 2, torch.float16, "cuda"),
+        ((5, 4, 4, 4, 5), (2, 3, 3, 3, 3), 3, torch.float16, "cuda"),
+        ((5, 4, 4, 4, 5), (2, 3, 3, 3, 3), 4, torch.float16, "cuda"),
          
 ]
 filtered_test_cases = [
